@@ -16,3 +16,6 @@
 .settings
 .idea
 
+# Dependencies
+vendor
+
