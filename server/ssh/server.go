@@ -10,13 +10,11 @@
 // Client:
 // ssh foo@localhost -p 2200 #pass=bar
 
-package main
+package ssh
 
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/kr/pty"
-	"golang.org/x/crypto/ssh"
 	"io"
 	"io/ioutil"
 	"log"
@@ -27,6 +25,9 @@ import (
 	"sync"
 	"syscall"
 	"unsafe"
+
+	"github.com/kr/pty"
+	"golang.org/x/crypto/ssh"
 )
 
 func main() {
@@ -120,29 +121,29 @@ func handleChannel(newChannel ssh.NewChannel) {
 		return
 	}
 
-	// Fire up bash for this session
-	bash := exec.Command("bash")
+	// Fire up shell for this session
+	shell := exec.Command("sh")
 
 	// Prepare teardown function
 	close := func() {
 		connection.Close()
-		_, err := bash.Process.Wait()
+		_, err := shell.Process.Wait()
 		if err != nil {
-			log.Printf("Failed to exit bash (%s)", err)
+			log.Printf("Failed to exit shell (%s)", err)
 		}
 		log.Printf("Session closed")
 	}
 
 	// Allocate a terminal for this channel
 	log.Print("Creating pty...")
-	bashf, err := pty.Start(bash)
+	bashf, err := pty.Start(shell)
 	if err != nil {
 		log.Printf("Could not start pty (%s)", err)
 		close()
 		return
 	}
 
-	//pipe session to bash and visa-versa
+	//pipe session to shell and visa-versa
 	var once sync.Once
 	go func() {
 		io.Copy(connection, bashf)
